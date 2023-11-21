@@ -58,6 +58,16 @@ function App() {
     }
   }
 
+  function moveFromOneToTwo(index: number): void {
+    setItems(items.filter((x) => x.key !== items[index].key));
+    setItems2([...items2, items[index]]);
+  }
+
+  function moveFromTwoToOne(index: number): void {
+    setItems2(items2.filter((x) => x.key !== items2[index].key));
+    setItems([...items, items2[index]]);
+  }
+
   return (
     <div
       style={{ display: 'flex', width: '600px', justifyContent: 'space-between', padding: '40px' }}
@@ -71,6 +81,7 @@ function App() {
           dragData={dragData}
           onSetDraggedItems={setDragData}
           onDropped={handleDropped}
+          onItemDoubleClick={(index) => moveFromOneToTwo(index)}
         />
       </div>
 
@@ -83,6 +94,7 @@ function App() {
           dragData={dragData}
           onSetDraggedItems={setDragData}
           onDropped={handleDropped}
+          onItemDoubleClick={(index) => moveFromTwoToOne(index)}
         />
       </div>
 

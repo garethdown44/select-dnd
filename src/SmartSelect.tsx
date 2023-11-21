@@ -18,6 +18,7 @@ type Props = {
   onSetDraggedItems: (dragData: DragData) => void;
   onSetItems: (items: Item[]) => void;
   onDropped: (dragData: DragData) => void;
+  onItemDoubleClick?: (index: number) => void;
 };
 
 type State = {
@@ -31,10 +32,6 @@ export class SmartSelect extends React.Component<Props, State> {
 
   handleItemClick = (event: React.MouseEvent<HTMLLIElement>, key: string) => {
     this.setState((prevState) => {
-      // if (prevState.selectedItems.includes(key)) {
-      //   return { selectedItems: [key] };
-      // } else
-
       if (event.ctrlKey || event.metaKey) {
         return { selectedItems: [...prevState.selectedItems, key] };
       } else if (event.shiftKey) {
@@ -200,6 +197,7 @@ export class SmartSelect extends React.Component<Props, State> {
             onDragLeave={this.handleDragLeave}
             onDrop={this.handleDrop}
             onClick={(event) => this.handleItemClick(event, item.key)}
+            onDoubleClick={() => this.props.onItemDoubleClick?.(index)}
             onKeyDown={(event) => this.handleKeyDown(event, index)}
             $isSelected={this.state.selectedItems.includes(item.key)}
           >
