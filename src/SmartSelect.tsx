@@ -30,6 +30,19 @@ export class SmartSelect extends React.Component<Props, State> {
     selectedItems: [] as string[]
   };
 
+  dropCue = document.createElement('div');
+  dropPosition: 'before' | 'after' = 'before';
+
+  constructor(props: Props) {
+    super(props);
+
+    this.dropCue.id = 'drop-cue';
+    this.dropCue.style.height = '2px';
+    this.dropCue.style.width = '100%';
+    this.dropCue.style.backgroundColor = '#FC5185';
+    this.dropCue.style.pointerEvents = 'none';
+  }
+
   handleItemClick = (event: React.MouseEvent<HTMLLIElement>, key: string) => {
     this.setState((prevState) => {
       if (event.ctrlKey || event.metaKey) {
@@ -49,7 +62,7 @@ export class SmartSelect extends React.Component<Props, State> {
     });
   };
 
-  handleDragStart = (event: React.DragEvent<HTMLLIElement>) => {
+  handleDragStart = (event: React.DragEvent<HTMLElement>) => {
     const itemKey = event.currentTarget.getAttribute('data-key');
     event.dataTransfer?.setData('text/plain', itemKey || '');
 
@@ -59,23 +72,32 @@ export class SmartSelect extends React.Component<Props, State> {
     });
   };
 
-  handleDragOver = (event: React.DragEvent<HTMLLIElement>) => {
+  handleDragOver = (event: React.DragEvent<HTMLElement>) => {
     event.preventDefault();
+
+    if (event.currentTarget.tagName === 'UL') {
+      return;
+    }
 
     const rect = event.currentTarget.getBoundingClientRect();
 
     if (event.clientY - rect.top < rect.height / 2) {
       event.currentTarget.style.borderTop = '2px solid red';
       event.currentTarget.style.borderBottom = 'none';
+      this.dropPosition = 'before';
+    } else if (event.clientY - rect.top > rect.height / 2) {
+      this.dropPosition = 'after';
+      event.currentTarget.style.borderTop = 'none';
+      event.currentTarget.style.borderBottom = '2px solid red';
     }
   };
 
-  handleDragLeave = (event: React.DragEvent<HTMLLIElement>) => {
+  handleDragLeave = (event: React.DragEvent<HTMLElement>) => {
     event.currentTarget.style.borderTop = 'none';
-    event.currentTarget.style.borderBottom = '1px solid #ccc';
+    event.currentTarget.style.borderBottom = 'none';
   };
 
-  handleDrop = (event: React.DragEvent<HTMLLIElement>) => {
+  handleDrop = (event: React.DragEvent<HTMLElement>) => {
     event.preventDefault();
 
     console.log('dragData', this.props.dragData);
@@ -96,23 +118,24 @@ export class SmartSelect extends React.Component<Props, State> {
       ];
 
       const dropIndex = newItemsWithoutSelected.findIndex((item) => item.key === dropKey);
+      const indexToInsert = this.dropPosition === 'before' ? dropIndex : dropIndex + 1;
 
-      // insert the selected items before the drop index
       const newItems = [
-        ...newItemsWithoutSelected.slice(0, dropIndex),
+        ...newItemsWithoutSelected.slice(0, indexToInsert),
         ...selectedItemsCopy,
-        ...newItemsWithoutSelected.slice(dropIndex)
+        ...newItemsWithoutSelected.slice(indexToInsert)
       ];
 
       this.props.onSetItems(newItems);
     } else {
       const dropIndex = this.props.items.findIndex((item) => item.key === dropKey);
 
-      // insert the selected items before the drop index
+      const indexToInsert = this.dropPosition === 'before' ? dropIndex : dropIndex + 1;
+
       const newItems = [
-        ...this.props.items.slice(0, dropIndex),
+        ...this.props.items.slice(0, indexToInsert),
         ...this.props.dragData.items,
-        ...this.props.items.slice(dropIndex)
+        ...this.props.items.slice(indexToInsert)
       ];
 
       this.props.onSetItems(newItems);
@@ -185,7 +208,11 @@ export class SmartSelect extends React.Component<Props, State> {
 
   render() {
     return (
-      <StyledList>
+      <StyledList
+        onDragOver={this.handleDragOver}
+        onDragLeave={this.handleDragLeave}
+        onDrop={this.handleDrop}
+      >
         {this.props.items.map((item, index) => (
           <StyledListItem
             tabIndex={index}
