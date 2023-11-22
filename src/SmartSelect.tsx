@@ -86,8 +86,7 @@ export class SmartSelect extends React.Component<Props, State> {
         if (lastLiElement) {
           // if the mouse is past the last li element
           if (event.clientY - lastLiElement.getBoundingClientRect().bottom > 0) {
-            lastLiElement.style.borderTop = 'none';
-            lastLiElement.style.borderBottom = '2px solid red';
+            lastLiElement.classList.add('drop-cue-after');
             this.dropPosition = 'after';
             return;
           }
@@ -98,9 +97,8 @@ export class SmartSelect extends React.Component<Props, State> {
 
     const rect = event.currentTarget.getBoundingClientRect();
 
-    if (event.clientY - rect.top < rect.height / 2) {
-      event.currentTarget.style.borderTop = '2px solid red';
-      event.currentTarget.style.borderBottom = 'none';
+    if (event.clientY - rect.top < rect.height) {
+      event.currentTarget.classList.add('drop-cue-before');
       this.dropPosition = 'before';
       return;
     }
@@ -111,8 +109,7 @@ export class SmartSelect extends React.Component<Props, State> {
       const lastLiElement = event.currentTarget.lastChild as HTMLLIElement;
 
       if (lastLiElement) {
-        lastLiElement.style.borderTop = 'none';
-        lastLiElement.style.borderBottom = 'none';
+        lastLiElement.classList.remove('drop-cue-before', 'drop-cue-after');
         return;
       }
     }
@@ -122,8 +119,7 @@ export class SmartSelect extends React.Component<Props, State> {
       return;
     }
 
-    event.currentTarget.style.borderTop = 'none';
-    event.currentTarget.style.borderBottom = 'none';
+    event.currentTarget.classList.remove('drop-cue-before', 'drop-cue-after');
   };
 
   handleDrop = (event: React.DragEvent<HTMLElement>) => {
@@ -132,8 +128,7 @@ export class SmartSelect extends React.Component<Props, State> {
     let dropKey: string | null = null;
 
     if (event.currentTarget.tagName !== 'UL') {
-      event.currentTarget.style.borderTop = 'none';
-      event.currentTarget.style.borderBottom = 'none';
+      event.currentTarget.classList.remove('drop-cue-before', 'drop-cue-after');
     }
 
     if (event.currentTarget.tagName === 'UL') {
@@ -153,7 +148,7 @@ export class SmartSelect extends React.Component<Props, State> {
       }
 
       if (lastLiElement) {
-        lastLiElement.style.borderBottom = 'none';
+        lastLiElement.classList.remove('drop-cue-after');
         dropKey = lastLiElement.getAttribute('data-key');
       }
     }
