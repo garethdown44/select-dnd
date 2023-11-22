@@ -18,7 +18,7 @@ type Props = {
   onSetDraggedItems: (dragData: DragData) => void;
   onSetItems: (items: Item[]) => void;
   onDropped: (dragData: DragData) => void;
-  onItemDoubleClick?: (index: number) => void;
+  onItemDoubleClick?: (key: string) => void;
 };
 
 type State = {
@@ -30,17 +30,10 @@ export class SmartSelect extends React.Component<Props, State> {
     selectedItems: [] as string[]
   };
 
-  dropCue = document.createElement('div');
   dropPosition: 'before' | 'after' = 'before';
 
   constructor(props: Props) {
     super(props);
-
-    this.dropCue.id = 'drop-cue';
-    this.dropCue.style.height = '2px';
-    this.dropCue.style.width = '100%';
-    this.dropCue.style.backgroundColor = '#FC5185';
-    this.dropCue.style.pointerEvents = 'none';
   }
 
   handleItemClick = (event: React.MouseEvent<HTMLLIElement>, key: string) => {
@@ -66,18 +59,40 @@ export class SmartSelect extends React.Component<Props, State> {
     const itemKey = event.currentTarget.getAttribute('data-key');
     event.dataTransfer?.setData('text/plain', itemKey || '');
 
+    if (!itemKey) {
+      return;
+    }
+
+    const itemsBeingDragged =
+      this.state.selectedItems.length > 0
+        ? this.props.items.filter((x) => this.state.selectedItems.includes(x.key))
+        : this.props.items.filter((x) => x.key === itemKey);
+
     this.props.onSetDraggedItems({
       listId: this.props.listId,
-      items: this.props.items.filter((x) => this.state.selectedItems.includes(x.key))
+      items: itemsBeingDragged
     });
   };
-
-  target: HTMLElement | null = null;
 
   handleDragOver = (event: React.DragEvent<HTMLElement>) => {
     event.preventDefault();
 
     if (event.currentTarget.tagName === 'UL') {
+      if (this.props.items.length === 0) {
+        event.currentTarget.style.background = '#eee';
+      } else {
+        const lastLiElement = event.currentTarget.lastChild as HTMLLIElement;
+
+        if (lastLiElement) {
+          // if the mouse is past the last li element
+          if (event.clientY - lastLiElement.getBoundingClientRect().bottom > 0) {
+            lastLiElement.style.borderTop = 'none';
+            lastLiElement.style.borderBottom = '2px solid red';
+            this.dropPosition = 'after';
+            return;
+          }
+        }
+      }
       return;
     }
 
@@ -95,7 +110,18 @@ export class SmartSelect extends React.Component<Props, State> {
   };
 
   handleDragLeave = (event: React.DragEvent<HTMLElement>) => {
+    if (event.currentTarget.tagName === 'UL' && this.props.items.length > 0) {
+      const lastLiElement = event.currentTarget.lastChild as HTMLLIElement;
+
+      if (lastLiElement) {
+        lastLiElement.style.borderTop = 'none';
+        lastLiElement.style.borderBottom = 'none';
+        return;
+      }
+    }
+
     if (event.currentTarget.tagName === 'UL') {
+      event.currentTarget.style.background = 'none';
       return;
     }
 
@@ -106,18 +132,36 @@ export class SmartSelect extends React.Component<Props, State> {
   handleDrop = (event: React.DragEvent<HTMLElement>) => {
     event.preventDefault();
 
+    let dropKey: string | null = null;
+
     if (event.currentTarget.tagName !== 'UL') {
       event.currentTarget.style.borderTop = 'none';
       event.currentTarget.style.borderBottom = 'none';
     }
 
-    // the UL should only respond to this event when there are no items.
-    // otherwise the event gets handled twice
-    if (event.currentTarget.tagName === 'UL' && this.props.items.length > 0) {
-      return;
+    if (event.currentTarget.tagName === 'UL') {
+      event.currentTarget.style.background = 'none';
+
+      const lastLiElement = event.currentTarget.lastChild as HTMLLIElement;
+
+      // the UL should only respond to this event when there are no items.
+      // otherwise the event gets handled twice
+      if (this.props.items.length > 0) {
+        const isMousePastLastLiElement =
+          event.clientY - lastLiElement.getBoundingClientRect().bottom > 0;
+
+        if (!isMousePastLastLiElement) {
+          return;
+        }
+      }
+
+      if (lastLiElement) {
+        lastLiElement.style.borderBottom = 'none';
+        dropKey = lastLiElement.getAttribute('data-key');
+      }
     }
 
-    const dropKey = event.currentTarget.getAttribute('data-key');
+    dropKey ??= event.currentTarget.getAttribute('data-key');
 
     // if the items are being dragged within this list
     if (this.props.dragData.listId === this.props.listId) {
@@ -298,7 +342,7 @@ export class SmartSelect extends React.Component<Props, State> {
             onDragLeave={this.handleDragLeave}
             onDrop={this.handleDrop}
             onClick={(event) => this.handleItemClick(event, item.key)}
-            onDoubleClick={() => this.props.onItemDoubleClick?.(index)}
+            onDoubleClick={() => this.props.onItemDoubleClick?.(item.key)}
             onKeyDown={(event) => this.handleKeyDown(event, index)}
             $isSelected={this.state.selectedItems.includes(item.key)}
           >

@@ -42,11 +42,13 @@ function App() {
   const [items2, setItems2] = React.useState(originalItems2);
   const [items3, setItems3] = React.useState<Item[]>([]);
 
+  const [items1FilterText, setItems1FilterText] = React.useState<string>('');
+
   const [dragData, setDragData] = React.useState({} as DragData);
 
   function handleDropped(dragData: DragData) {
     if (dragData.listId === 'list-one') {
-      setItems(items.filter((x) => !dragData.items.includes(x)));
+      setItems(items.filter((x) => !dragData.items.find((y) => y.key === x.key)));
     }
 
     if (dragData.listId === 'list-two') {
@@ -58,13 +60,15 @@ function App() {
     }
   }
 
-  function moveFromOneToTwo(index: number): void {
-    setItems(items.filter((x) => x.key !== items[index].key));
+  function moveFromOneToTwo(key: string): void {
+    const index = items.findIndex((x) => x.key === key);
+    setItems(items.filter((x) => x.key !== key));
     setItems2([...items2, items[index]]);
   }
 
-  function moveFromTwoToOne(index: number): void {
-    setItems2(items2.filter((x) => x.key !== items2[index].key));
+  function moveFromTwoToOne(key: string): void {
+    const index = items2.findIndex((x) => x.key === key);
+    setItems2(items2.filter((x) => x.key !== key));
     setItems([...items, items2[index]]);
   }
 
@@ -76,13 +80,25 @@ function App() {
         <div>List One</div>
         <SmartSelect
           listId="list-one"
-          items={items}
+          items={items.filter((x) =>
+            x.label.toLowerCase().includes(items1FilterText.toLowerCase())
+          )}
           onSetItems={setItems}
           dragData={dragData}
           onSetDraggedItems={setDragData}
           onDropped={handleDropped}
-          onItemDoubleClick={(index) => moveFromOneToTwo(index)}
+          onItemDoubleClick={(key) => moveFromOneToTwo(key)}
         />
+
+        <div>
+          <div>Filter</div>
+          <input
+            style={{ outline: 'none', width: '200px', margin: 'none', padding: '4px' }}
+            type="text"
+            value={items1FilterText}
+            onChange={(e) => setItems1FilterText(e.target.value)}
+          />
+        </div>
       </div>
 
       <div>
@@ -94,7 +110,7 @@ function App() {
           dragData={dragData}
           onSetDraggedItems={setDragData}
           onDropped={handleDropped}
-          onItemDoubleClick={(index) => moveFromTwoToOne(index)}
+          onItemDoubleClick={(key) => moveFromTwoToOne(key)}
         />
       </div>
 
