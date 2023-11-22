@@ -102,10 +102,7 @@ export class SmartSelect extends React.Component<Props, State> {
       event.currentTarget.style.borderTop = '2px solid red';
       event.currentTarget.style.borderBottom = 'none';
       this.dropPosition = 'before';
-    } else if (event.clientY - rect.top > rect.height / 2) {
-      event.currentTarget.style.borderTop = 'none';
-      event.currentTarget.style.borderBottom = '2px solid red';
-      this.dropPosition = 'after';
+      return;
     }
   };
 
@@ -188,8 +185,6 @@ export class SmartSelect extends React.Component<Props, State> {
 
       const indexToInsert = this.dropPosition === 'before' ? dropIndex : dropIndex + 1;
 
-      console.log('list' + this.props.listId + ' indexToInsert', indexToInsert);
-
       const newItems = [
         ...this.props.items.slice(0, indexToInsert),
         ...this.props.dragData.items,
@@ -245,12 +240,18 @@ export class SmartSelect extends React.Component<Props, State> {
           selectedItems: [...this.state.selectedItems, ...itemsBelow.map((item) => item.key)]
         });
 
+        const lastLiElement = target.parentElement?.lastChild as HTMLLIElement;
+
+        if (lastLiElement) {
+          lastLiElement.focus();
+        }
+
         return;
       }
 
       if (event.shiftKey && (event.metaKey || event.ctrlKey) && key === 'ArrowUp') {
         event.preventDefault();
-        // select all the items below the current item
+        // select all the items above the current item
         const indexOfSelectedItem = this.props.items.findIndex(
           (item) => item.key === this.state.selectedItems[0]
         );
@@ -260,6 +261,12 @@ export class SmartSelect extends React.Component<Props, State> {
         this.setState({
           selectedItems: [...this.state.selectedItems, ...itemsAbove.map((item) => item.key)]
         });
+
+        const firstLiElement = target.parentElement?.firstChild as HTMLLIElement;
+
+        if (firstLiElement) {
+          firstLiElement.focus();
+        }
 
         return;
       }
