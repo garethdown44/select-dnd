@@ -193,6 +193,23 @@ export class SmartSelect extends React.Component<Props, State> {
 
       this.props.onSetItems(newItems);
       this.props.onDropped(this.props.dragData);
+
+      this.setState({ selectedItems: this.props.dragData.items.map((item) => item.key) });
+
+      // focus the first item that was dropped
+      setTimeout(() => {
+        if (this.state.selectedItems.length === 0) {
+          return;
+        }
+
+        const firstSelectedItem = document.querySelector(
+          `[data-key="${this.state.selectedItems[0]}"]`
+        ) as HTMLLIElement;
+
+        if (firstSelectedItem) {
+          firstSelectedItem.focus();
+        }
+      }, 0);
     }
   };
 
