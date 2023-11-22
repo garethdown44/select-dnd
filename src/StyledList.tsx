@@ -8,7 +8,7 @@ export const StyledList = styled.ul`
   border: 1px solid #ccc;
   width: 200px;
   max-height: 400px;
-  /* min-height: 200px; */
+  min-height: 300px;
   height: 100px;
   overflow-y: scroll;
   background-color: white;

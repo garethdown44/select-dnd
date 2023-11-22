@@ -70,7 +70,7 @@ function App() {
 
   return (
     <div
-      style={{ display: 'flex', width: '600px', justifyContent: 'space-between', padding: '40px' }}
+      style={{ display: 'flex', width: '70%', justifyContent: 'space-between', padding: '40px' }}
     >
       <div>
         <div>List One</div>

@@ -72,6 +72,8 @@ export class SmartSelect extends React.Component<Props, State> {
     });
   };
 
+  target: HTMLElement | null = null;
+
   handleDragOver = (event: React.DragEvent<HTMLElement>) => {
     event.preventDefault();
 
@@ -86,13 +88,17 @@ export class SmartSelect extends React.Component<Props, State> {
       event.currentTarget.style.borderBottom = 'none';
       this.dropPosition = 'before';
     } else if (event.clientY - rect.top > rect.height / 2) {
-      this.dropPosition = 'after';
       event.currentTarget.style.borderTop = 'none';
       event.currentTarget.style.borderBottom = '2px solid red';
+      this.dropPosition = 'after';
     }
   };
 
   handleDragLeave = (event: React.DragEvent<HTMLElement>) => {
+    if (event.currentTarget.tagName === 'UL') {
+      return;
+    }
+
     event.currentTarget.style.borderTop = 'none';
     event.currentTarget.style.borderBottom = 'none';
   };
@@ -100,10 +106,16 @@ export class SmartSelect extends React.Component<Props, State> {
   handleDrop = (event: React.DragEvent<HTMLElement>) => {
     event.preventDefault();
 
-    console.log('dragData', this.props.dragData);
+    if (event.currentTarget.tagName !== 'UL') {
+      event.currentTarget.style.borderTop = 'none';
+      event.currentTarget.style.borderBottom = 'none';
+    }
 
-    event.currentTarget.style.borderTop = 'none';
-    event.currentTarget.style.borderBottom = 'none';
+    // the UL should only respond to this event when there are no items.
+    // otherwise the event gets handled twice
+    if (event.currentTarget.tagName === 'UL' && this.props.items.length > 0) {
+      return;
+    }
 
     const dropKey = event.currentTarget.getAttribute('data-key');
 
@@ -132,6 +144,8 @@ export class SmartSelect extends React.Component<Props, State> {
 
       const indexToInsert = this.dropPosition === 'before' ? dropIndex : dropIndex + 1;
 
+      console.log('list' + this.props.listId + ' indexToInsert', indexToInsert);
+
       const newItems = [
         ...this.props.items.slice(0, indexToInsert),
         ...this.props.dragData.items,
@@ -146,6 +160,12 @@ export class SmartSelect extends React.Component<Props, State> {
   handleKeyDown = (event: React.KeyboardEvent<HTMLElement>, itemIndex: number) => {
     const { key } = event;
     const target = event.target as HTMLLIElement;
+
+    if ((event.ctrlKey || event.metaKey) && key === 'a') {
+      event.preventDefault();
+      this.setState({ selectedItems: this.props.items.map((item) => item.key) });
+      return;
+    }
 
     if (key === 'ArrowUp' || key === 'ArrowDown') {
       event.preventDefault();
@@ -166,6 +186,38 @@ export class SmartSelect extends React.Component<Props, State> {
         (target.nextElementSibling as HTMLLIElement)?.focus();
       } else {
         (target.previousElementSibling as HTMLLIElement)?.focus();
+      }
+
+      if (event.shiftKey && (event.metaKey || event.ctrlKey) && key === 'ArrowDown') {
+        event.preventDefault();
+        // select all the items below the current item
+        const indexOfSelectedItem = this.props.items.findIndex(
+          (item) => item.key === this.state.selectedItems[0]
+        );
+
+        const itemsBelow = this.props.items.slice(indexOfSelectedItem + 1);
+
+        this.setState({
+          selectedItems: [...this.state.selectedItems, ...itemsBelow.map((item) => item.key)]
+        });
+
+        return;
+      }
+
+      if (event.shiftKey && (event.metaKey || event.ctrlKey) && key === 'ArrowUp') {
+        event.preventDefault();
+        // select all the items below the current item
+        const indexOfSelectedItem = this.props.items.findIndex(
+          (item) => item.key === this.state.selectedItems[0]
+        );
+
+        const itemsAbove = this.props.items.slice(0, indexOfSelectedItem);
+
+        this.setState({
+          selectedItems: [...this.state.selectedItems, ...itemsAbove.map((item) => item.key)]
+        });
+
+        return;
       }
 
       if (event.shiftKey && key === 'ArrowDown') {
@@ -202,6 +254,28 @@ export class SmartSelect extends React.Component<Props, State> {
         }
       } else {
         this.setState({ selectedItems: [this.props.items[newIndex].key] });
+      }
+
+      return;
+    }
+
+    // for any other key, jump to the next item that starts with that letter
+    const letter = key.toLowerCase();
+    const indexOfSelectedItem = this.props.items.findIndex(
+      (item) => item.key === this.state.selectedItems[0]
+    );
+
+    const array = [
+      ...this.props.items.slice(indexOfSelectedItem + 1),
+      ...this.props.items.slice(0, indexOfSelectedItem)
+    ];
+
+    for (const item of array) {
+      if (item.label.toLowerCase().startsWith(letter)) {
+        const element = document.querySelector(`[data-key="${item.key}"]`);
+        (element as HTMLElement)?.focus();
+        this.setState({ selectedItems: [item.key] });
+        return;
       }
     }
   };
